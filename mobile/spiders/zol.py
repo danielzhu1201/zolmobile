@@ -17,17 +17,17 @@ class DatabloggerSpider(CrawlSpider):
     rules = [
 	Rule(
 	     LinkExtractor(
-		allow = ('/\d*?/\d*?/param.shtml',)
+		allow = ('param.shtml',)
 	     ),
 	     follow=False,
-	     callback="parse_items2"
+	     callback="parse2"
 	),
 	Rule(
             LinkExtractor(
 		allow = ('cell_phone/index\d*?.shtml',)
             ),
             follow=False,
-            callback="parse_items"
+            callback="parse_price"
         ),
 	Rule(
 	    LinkExtractor(
@@ -47,24 +47,27 @@ class DatabloggerSpider(CrawlSpider):
             yield scrapy.Request(url, callback=self.parse, dont_filter=True)
 
     # Method for parsing items
-    def parse_items(self, response):
+    def parse_price(self, response):
+	print (response.url)	
 	print ("parse\n\n")
         # The list of items that are found on the particular page
-        items = []
+	items = {}
+	items["type"] = "mobile"
+	yield items
+
+	#item2 = {}
+	#item2["hey"] = "halo"
+	#yield item2     # will be divided into two pipelines
         # Only extract canonicalized and unique links (with respect to the current page)
-        links = LinkExtractor(canonicalize=True, unique=True).extract_links(response)
-        return items
+        links = LinkExtractor(allow = ('param.shtml',),canonicalize=True,unique=True).extract_links(response)
+        for link in links:
+		yield scrapy.Request(link.url, callback = self.parse2)
    
-    def parse_items2(self, response):
+    def parse2(self, response):
+	print (response.url)
 	print ("parse 2\n\n")
         # The list of items that are found on the particular page
         items = []
         # Only extract canonicalized and unique links (with respect to the current page)
         links = LinkExtractor(canonicalize=True, unique=True).extract_links(response)
-        return items
-
-
-
-
-       
-	
+        return items	
