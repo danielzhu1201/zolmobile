@@ -9,7 +9,7 @@ CREATE TABLE price (
     manuId VARCHAR(1000),
     manuName VARCHAR(1000),
     breadcrumb VARCHAR(1000),
-    page-title VARCHAR(1000),
+    page_title VARCHAR(1000),
     anothername VARCHAR(1000),
     price VARCHAR(1000),
     rate VARCHAR(1000),
@@ -30,7 +30,7 @@ CREATE TABLE info (
 	zolproduct VARCHAR(100),
 	zolManuCnName VARCHAR(100),
 	breadcrumb VARCHAR(100),
-	page-title VARCHAR(100),
-	spec VARCHAR(65530),
+	page_title VARCHAR(100),
+	spec VARCHAR(10000),
 	PRIMARY KEY(id)
 );
