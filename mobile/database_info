@@ -1,0 +1,36 @@
+CREATE TABLE price (
+    id INT,
+    type VARCHAR(100), 
+    source_url VARCHAR(1000), 
+    proId VARCHAR(1000),
+    seriesId VARCHAR(1000),
+    subcateId VARCHAR(1000),
+    subcateName VARCHAR(1000),
+    manuId VARCHAR(1000),
+    manuName VARCHAR(1000),
+    breadcrumb VARCHAR(1000),
+    page-title VARCHAR(1000),
+    anothername VARCHAR(1000),
+    price VARCHAR(1000),
+    rate VARCHAR(1000),
+    commentCount VARCHAR(1000),
+    goodWords VARCHAR(1000),
+    badWords VARCHAR(1000),
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE info (
+	id INT,
+	_id VARCHAR(1000),
+	zolSubName VARCHAR(100),
+	type VARCHAR(10),
+	source_url VARCHAR(1000),
+	mobile_code VARCHAR(1000),
+	zolproductid VARCHAR(1000),
+	zolproduct VARCHAR(100),
+	zolManuCnName VARCHAR(100),
+	breadcrumb VARCHAR(100),
+	page-title VARCHAR(100),
+	spec VARCHAR(65530),
+	PRIMARY KEY(id)
+);
