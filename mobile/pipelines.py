@@ -9,5 +9,5 @@
 class MobilePipeline(object):
     def process_item(self, item, spider):
 	print "\n\n\n im in pipeline \n\n\n"
-	print item
-        return item
+	for it in item: print it
+    
