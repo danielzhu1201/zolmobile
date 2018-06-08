@@ -59,9 +59,9 @@ class DatabloggerSpider(CrawlSpider):
         mobile_info_dict={}
         mobile_info_dict['type']='price'
         mobile_info_dict['source_url']=response.url
-        mobile_info_dict['proId']='|'.join(re.findall('proId\D*(\d*)',response.body)).replace("\n","")
+        mobile_info_dict['proId']=re.findall('proId\D*(\d*)',response.body)[0].replace("\n","")
         mobile_info_dict['seriesId']='|'.join(re.findall('seriesId\D*(\d*)',response.body)) #this one's right
-        mobile_info_dict['subcateId']='|'.join(re.findall('subcateId\D*(\d*)',response.body)).replace("\n","")
+        mobile_info_dict['subcateId']=re.findall('subcateId\D*(\d*)',response.body)[0].replace("\n","")
         mobile_info_dict['subcateName']='|'.join([line.strip() for line in re.findall(u'subcateName[\s，,：:\']*(\S*?)\'',response.body_as_unicode())]).replace("\n","")# dont work
         mobile_info_dict['manuId']='|'.join(re.findall('manuId\D*(\d*)',response.body)).replace("\n","")
         mobile_info_dict['manuName']='|'.join([line.strip() for line in re.findall(u'manuName[\s，,：:\']*(\S*?)\'',response.body_as_unicode())]).replace("\n","")# dont work
@@ -73,9 +73,13 @@ class DatabloggerSpider(CrawlSpider):
         mobile_info_dict['price']=''.join(selector_res.xpath('//div[@class="price price-normal"]/span/b[contains(@class,"price-type")]/text()').extract())
         mobile_info_dict['rate'] = "|".join([line.strip() for line in selector_res.xpath("//div[@class='review-comments-score clearfix']//div[@class='total-score']/strong/text()").extract()]).replace("\n","")
         mobile_info_dict['commentCount'] = "|".join(selector_res.xpath("//div[@class='section comments-section']//div[@class='section-header']//span[@class='section-header-desc']//em/text()").extract()).replace("\n","")
-        mobile_info_dict['goodWords'] = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='good-words']/a/text()").extract()).replace("\n","")
-        mobile_info_dict['badWords'] = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='bad-words']/a/text()").extract()).replace("\n","")
-
+        temp = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='good-words']/a/text()").extract()).replace("\n","")
+        if temp: mobile_info_dict['goodWords'] = temp
+        else: mobile_info_dict['goodWords'] = 'null'
+        temp2 = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='bad-words']/a/text()").extract()).replace("\n","")
+        if temp2: mobile_info_dict['badWords'] = temp2
+        else: mobile_info_dict['badWords'] = 'null'
+        
         yield mobile_info_dict
 
         #create new requests to search param
@@ -121,8 +125,8 @@ class DatabloggerSpider(CrawlSpider):
 	        #else:
             #    print 666
                 #mobile_info_value='|'.join([line.strip().replace("\n","") for line in mobile_info.xpath('td/span[contains(@id,"newPmVal")]/text()').extract()])
-            
-            mobile_spec_dict[mobile_info_tag]=mobile_info_value
+            if mobile_info_tag:
+                mobile_spec_dict[mobile_info_tag]=mobile_info_value
 
         mobile_info_dict['spec'] = json.dumps(mobile_spec_dict) #dump all spec out with json.dumps
 
