@@ -64,13 +64,21 @@ class DatabloggerSpider(CrawlSpider):
         mobile_info_dict['subcateId']=re.findall('subcateId\D*(\d*)',response.body)[0].replace("\n","")
         mobile_info_dict['subcateName']='|'.join([line.strip() for line in re.findall(u'subcateName[\s，,：:\']*(\S*?)\'',response.body_as_unicode())]).replace("\n","")# dont work
         mobile_info_dict['manuId']='|'.join(re.findall('manuId\D*(\d*)',response.body)).replace("\n","")
-        mobile_info_dict['manuName']='|'.join([line.strip() for line in re.findall(u'manuName[\s，,：:\']*(\S*?)\'',response.body_as_unicode())]).replace("\n","")# dont work
+        mobile_info_dict['manuName']='|'.join([line.strip() for line in re.findall(u'manuName[\s，,：:\']*(\S*?)\'',response.body_as_unicode())]).replace("\n","")# that's the brand
         
         selector_res=Selector(response)
         mobile_info_dict['breadcrumb']='|'.join([line.strip() for line in selector_res.xpath('//div[@class="wrapper clearfix"]/div[@class="breadcrumb"]/a/text()').extract()]).replace("\n","")
         mobile_info_dict['page_title']=''.join([line.strip() for line in selector_res.xpath('//div[contains(@class,"product-model page-title clearfix")]/h1/text()').extract()]).replace("\n","")
         mobile_info_dict['anothername']=re.sub(u'\u522b\u540d\uff1a','',''.join([line.strip() for line in selector_res.xpath('//div[contains(@class,"page-title")]/h2/text()').extract()])).replace("\n","")
+        #if anothername empty - use zolproduct from info page
         mobile_info_dict['price']=''.join(selector_res.xpath('//div[@class="price price-normal"]/span/b[contains(@class,"price-type")]/text()').extract())
+        if mobile_info_dict['price'] == '':
+            mobile_info_dict['price'] = ''.join(selector_res.xpath('/html/body/div[13]/div[2]/div[2]/div/span[1]/b[2]/text()').extract())
+        #that's a placeholder, need to do request on another page to get real price
+        if mobile_info_dict['price'] == '':
+            temp_url = 'http://detail.zol.com.cn/xhr4_Merchant_DetailList_proId='+mobile_info_dict['proId']+'%5EprovinceId=30%5EcityId=347%5Etype=1%5Emark=201861112.html'
+            yield scrapy.Request(temp_url, callback=self.parse_real_price)
+        
         mobile_info_dict['rate'] = "|".join([line.strip() for line in selector_res.xpath("//div[@class='review-comments-score clearfix']//div[@class='total-score']/strong/text()").extract()]).replace("\n","")
         mobile_info_dict['commentCount'] = "|".join(selector_res.xpath("//div[@class='section comments-section']//div[@class='section-header']//span[@class='section-header-desc']//em/text()").extract()).replace("\n","")
         temp = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='good-words']/a/text()").extract()).replace("\n","")
@@ -102,7 +110,7 @@ class DatabloggerSpider(CrawlSpider):
 
         if mobile_code_match: mobile_info_dict ['mobile_code']= mobile_code_match.group()
         mobile_info_dict['zolproductid']='|'.join([line.strip().replace("\n","") for line in re.findall('var zolproductid\D*(\d*)',response.body)])
-        mobile_info_dict['zolproduct']='|'.join([line.strip().replace("\n","") for line in re.findall('var zolproduct\s*= \"([^\"]*)',response.body_as_unicode())])
+        mobile_info_dict['zolproduct']='|'.join([line.strip().replace("\n","") for line in re.findall('var zolproduct\s*= \"([^\"]*)',response.body_as_unicode())]) #model #
         mobile_info_dict['zolManuCnName']='|'.join([line.strip().replace("\n","") for line in re.findall('var zolManuCnName\s*= \'([^\']*)',response.body_as_unicode())])
 
         selector_res=Selector(response)
@@ -132,4 +140,11 @@ class DatabloggerSpider(CrawlSpider):
 
         yield mobile_info_dict
         # Only extract canonicalized and unique links (with respect to the current page)
-        links = LinkExtractor(canonicalize=True, unique=True).extract_links(response)	
+        links = LinkExtractor(canonicalize=True, unique=True).extract_links(response)
+
+    def parse_real_price(self,response):
+        mobile_info_dict={}
+        mobile_info_dict['type'] = 'realprice'
+        mobile_info_dict['proId'] = ''.join([line.strip().replace("\n","") for line in re.findall('proId\D*(\d*)',response.url)])
+        mobile_info_dict['price'] = ''.join([line.strip().replace("\n","") for line in re.findall('price-type\D*(\d*)',response.body)])
+        yield mobile_info_dict

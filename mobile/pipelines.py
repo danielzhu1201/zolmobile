@@ -26,13 +26,15 @@ class MobilePipeline(object):
 
 	def process_item(self,item,spider):
 		if item['type'] == 'price':
-			res = self.dbpool.runInteraction(self.insert_into_table,item)
+			res = self.dbpool.runInteraction(self.insert_into_price,item)
 		elif item['type'] == 'param':
-			res = self.dbpool.runInteraction(self.insert_into_videotable,item)
+			res = self.dbpool.runInteraction(self.insert_into_info,item)
+		elif item['type'] == 'realprice':
+			res = self.dbpool.runInteraction(self.insert_into_price2,item)
 		else:
 			pass
 
-	def insert_into_table(self,conn,item):
+	def insert_into_price(self,conn,item):
 	    try:
 		data = tuple([
 						item['type'],
@@ -59,7 +61,7 @@ class MobilePipeline(object):
             except Exception as e:
     		traceback.print_exc()
 
-	def insert_into_videotable(self,conn,item):
+	def insert_into_info(self,conn,item):
 		try:
 		
 			data = tuple([
@@ -79,6 +81,24 @@ class MobilePipeline(object):
 			print len(data)
         		conn.executemany(
 				'insert into info(_id,zolSubName,type,source_url,mobile_code,zolproductid,zolproduct,zolManuCnName,breadcrumb,page_title,spec) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [data, ]
+				)
+        	except Exception as e:
+        		traceback.print_exc()
+	
+	def insert_into_price2(self,conn,item):
+		try:
+		
+			data = tuple([
+						item['proId'],
+						item['price'],
+			])
+
+			print '\n\n  ***real price*** \n\n'
+			print data
+
+			print len(data)
+        		conn.executemany(
+				'insert into price_real(proId,price) values(%s,%s)', [data, ]
 				)
         	except Exception as e:
         		traceback.print_exc()

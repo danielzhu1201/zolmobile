@@ -21,9 +21,9 @@ conn_newdb = MySQLdb.connect(
     use_unicode = True,
 )
 
-cur_data = conn_data.cursor()
+cur_data = conn_data.cursor(cursorclass=MySQLdb.cursors.DictCursor)
 
-cur_newdb = conn_newdb.cursor()
+cur_newdb = conn_newdb.cursor(cursorclass=MySQLdb.cursors.DictCursor)
 
 #read from cur_data table
 cur_data.execute("select * from price")
@@ -32,28 +32,51 @@ lines = cur_data.fetchall() #if too much data,use fetchmany on a cursor
 #iterate through the price table
 for line in lines:
     #info from price table
-    proId = line[3]
-    source_url = line[2]
-    anothername = line[11]
-    price = line[12]
-    rate = line[13]
+    proId = line['proId']
+    source_url = line['source_url']
+    anothername = line['anothername']
+    #getting price from realprice table
+    price = line['price']
+    if price == "":
+        cur_data.execute("select * from price_real where proId="+proId)
+        temp_price = cur_data.fetchall()
+        #if i can't find it, -1 --> dne
+        if len(temp_price) == 0:
+            price = -1
+        #if i can find it but empty, problem from the website
+        else:
+            price = temp_price[0]['price']
+            if price == "" or price == 0:
+                price = -2
+            else: 
+                pass
+    
+    rate = line['rate']
     if rate == "":
         rate = 'null'
-    commentCount = line[14]
+    commentCount = line['commentCount']
     if commentCount == "":
         commentCount = -1
-    goodWords = line[15]
+    goodWords = line['goodWords']
     if goodWords == "":
         goodWords = 'null'
-    badWords = line[16]
-    if badWords == 'null':
+    badWords = line['goodWords']
+    if badWords == "":
         badWords = 'null'
+    #brand
+    manuName = line['manuName']
 
     cur_data.execute("select * from info where zolproductid="+str(proId))
     temp_data = cur_data.fetchall()
     #ensure data found
-    if len(temp_data) != 0:
-        table = json.loads(temp_data[0][11])
+    if len(temp_data) == 0:
+        continue
+    else:
+        zolproduct = temp_data[0]['zolproduct']
+        if anothername == "":
+            anothername = zolproduct
+        #model
+        table = json.loads(temp_data[0]['spec'])
         release_date = table.get(u'上市日期','null')
         mobile_type = table.get(u'手机类型','null')
         os = table.get(u'操作系统', 'null')
@@ -108,100 +131,13 @@ for line in lines:
         warrenty_contact = table.get(u'客服电话', 'null')
 
         #data tuple to be inserted
-        data_toinsert = tuple([proId,source_url,anothername,price,rate,commentCount,goodWords,badWords,release_date,mobile_type,os,touch_type,screen_size,screen_material,resolution,ppi, screen_percentage, screen_other, cpu_model, cpu_freq, core_num, ram, rom, sd_card, storage_support, batt_type, batt_size, batt_charge, info_4g, info_3g, network_freq, sim_type, wlan, connectivity, ports, camera_total, camera_back, camera_front, cmos, flash, aperture, video, camera_func, design, color, design_size, weigh, material, interaction, fingerprint, sensor_type, audio_supp, video_supp, pic_supp, util, other_util, warrenty_policy, warrenty_time, warrenty_note, warrenty_contact],)
-        print data_toinsert
-        format_sql = 'insert into mobile (proId,source_url,anothername,price,rate,commentCount,goodWords,badWords,release_date,mobile_type,os,touch_type,screen_size,screen_material,resolution,ppi, screen_percentage, screen_other, cpu_model, cpu_freq, core_num, ram, rom, sd_card, storage_support, batt_type, batt_size, batt_charge, 4g, 3g, network_freq, sim_type, wlan, connectivity, ports, camera_total, camera_back, camera_front, cmos, flash, aperture, video, camera_func, design, color, design_size, weigh, material, interaction, fingerprint, sensor_type, audio_supp, video_supp, pic_supp, util, other_util, warrenty_policy, warrenty_time, warrenty_note, warrenty_contact) \
-        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        data_toinsert = tuple([proId,source_url,anothername,manuName,zolproduct,price,rate,commentCount,goodWords,badWords,release_date,mobile_type,os,touch_type,screen_size,screen_material,resolution,ppi, screen_percentage, screen_other, cpu_model, cpu_freq, core_num, ram, rom, sd_card, storage_support, batt_type, batt_size, batt_charge, info_4g, info_3g, network_freq, sim_type, wlan, connectivity, ports, camera_total, camera_back, camera_front, cmos, flash, aperture, video, camera_func, design, color, design_size, weigh, material, interaction, fingerprint, sensor_type, audio_supp, video_supp, pic_supp, util, other_util, warrenty_policy, warrenty_time, warrenty_note, warrenty_contact],)
+        format_sql = 'insert into mobile (proId,source_url,anothername,manuName,zolproduct,price,rate,commentCount,goodWords,badWords,release_date,mobile_type,os,touch_type,screen_size,screen_material,resolution,ppi, screen_percentage, screen_other, cpu_model, cpu_freq, core_num, ram, rom, sd_card, storage_support, batt_type, batt_size, batt_charge, 4g, 3g, network_freq, sim_type, wlan, connectivity, ports, camera_total, camera_back, camera_front, cmos, flash, aperture, video, camera_func, design, color, design_size, weigh, material, interaction, fingerprint, sensor_type, audio_supp, video_supp, pic_supp, util, other_util, warrenty_policy, warrenty_time, warrenty_note, warrenty_contact) \
+        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
         print format_sql % data_toinsert
         cur_newdb.executemany(format_sql, [data_toinsert,] )
         conn_newdb.commit()
-    else:
-        pass
 
-#dict = json.loads(lines[0][11])
-
-'''for K,V in dict.items():
-    if K:
-        print K
-        print V
-        print '\n'
-'''
-
-#item = dict.get(u'核心数',None)
-
-#if item != None: print item
-    
 print ("success")
-
-
-##our table was re-created to ensure utf-8 encoding
-
-'''
-
-CREATE TABLE `mobile` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `proId` varchar(128) DEFAULT NULL,
-  `source_url` varchar(256) DEFAULT NULL,
-  `anothername` text DEFAULT NULL,
-  `price` varchar(128) DEFAULT NULL,
-  `rate` varchar(32) DEFAULT NULL,
-  `commentCount` int DEFAULT NULL,
-  `goodWords` text DEFAULT NULL,
-  `badWords` text DEFAULT NULL,
-  `release_date` text DEFAULT NULL,
-  `mobile_type` text DEFAULT NULL,
-  `os` text DEFAULT NULL,
-  `touch_type` text DEFAULT NULL,
-  `screen_size` text DEFAULT NULL,
-  `screen_material` text DEFAULT NULL,
-  `resolution` text DEFAULT NULL,
-  `ppi` text DEFAULT NULL,
-  `screen_percentage` text DEFAULT NULL,
-  `screen_other` text DEFAULT NULL,
-  `cpu_model` text DEFAULT NULL,
-  `cpu_freq` text DEFAULT NULL,
-  `core_num` text DEFAULT NULL,
-  `ram` text DEFAULT NULL,
-  `rom` text DEFAULT NULL,
-  `sd_card` text DEFAULT NULL,
-  `storage_support` text DEFAULT NULL,
-  `batt_type` text DEFAULT NULL,
-  `batt_size` text DEFAULT NULL,
-  `batt_charge` text DEFAULT NULL,
-  `4g` text DEFAULT NULL,
-  `3g` text DEFAULT NULL,
-  `network_freq` text DEFAULT NULL,
-  `sim_type` text DEFAULT NULL,
-  `wlan` text DEFAULT NULL,
-  `connectivity` text DEFAULT NULL,
-  `ports` text DEFAULT NULL,
-  `camera_total` text DEFAULT NULL,
-  `camera_back` text DEFAULT NULL,
-  `camera_front` text DEFAULT NULL,
-  `cmos` text DEFAULT NULL,
-  `flash` text DEFAULT NULL,
-  `aperture` text DEFAULT NULL,
-  `video` text DEFAULT NULL,
-  `camera_func` text DEFAULT NULL,
-  `design` text DEFAULT NULL,
-  `color` text DEFAULT NULL,
-  `design_size` text DEFAULT NULL,
-  `weigh` text DEFAULT NULL,
-  `material` text DEFAULT NULL,
-  `interaction` text DEFAULT NULL,
-  `fingerprint` text DEFAULT NULL,
-  `sensor_type` text DEFAULT NULL,
-  `audio_supp` text DEFAULT NULL,
-  `video_supp` text DEFAULT NULL,
-  `pic_supp` text DEFAULT NULL,
-  `util` text DEFAULT NULL,
-  `other_util` text DEFAULT NULL,
-  `warrenty_policy` text DEFAULT NULL,
-  `warrenty_time` text DEFAULT NULL,
-  `warrenty_note` text DEFAULT NULL,
-  `warrenty_contact` text DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-'''
+cur_data.close()
+cur_newdb.close()
