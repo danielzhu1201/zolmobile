@@ -60,7 +60,7 @@ for line in lines:
     goodWords = line['goodWords']
     if goodWords == "":
         goodWords = 'null'
-    badWords = line['goodWords']
+    badWords = line['badWords']
     if badWords == "":
         badWords = 'null'
     #brand

@@ -53,8 +53,6 @@ class DatabloggerSpider(CrawlSpider):
 
     # Method for parsing items
     def parse_price(self, response):
-        print (response.url)
-        print ("parse \n\n")
         # parsing all the info from webpage
         mobile_info_dict={}
         mobile_info_dict['type']='price'
@@ -82,13 +80,26 @@ class DatabloggerSpider(CrawlSpider):
         mobile_info_dict['rate'] = "|".join([line.strip() for line in selector_res.xpath("//div[@class='review-comments-score clearfix']//div[@class='total-score']/strong/text()").extract()]).replace("\n","")
         mobile_info_dict['commentCount'] = "|".join(selector_res.xpath("//div[@class='section comments-section']//div[@class='section-header']//span[@class='section-header-desc']//em/text()").extract()).replace("\n","")
         temp = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='good-words']/a/text()").extract()).replace("\n","")
-        if temp: mobile_info_dict['goodWords'] = temp
+        if temp: 
+            mobile_info_dict['goodWords'] = temp
         else: mobile_info_dict['goodWords'] = 'null'
         temp2 = "|".join(selector_res.xpath("//div[@class='comments-words']//ul[@class='words-list clearfix']/li[@class='bad-words']/a/text()").extract()).replace("\n","")
-        if temp2: mobile_info_dict['badWords'] = temp2
+        if temp2: 
+            mobile_info_dict['badWords'] = temp2
         else: mobile_info_dict['badWords'] = 'null'
         
         yield mobile_info_dict
+
+        #mobile models 
+        mobile_model_dict = {}
+        mobile_model_dict['type'] = 'model'
+        mobile_model_dict['list'] = []
+        names = selector_res.xpath('//div[@class="cell cell-1"]/div[@class="title"]/a/text()').extract()
+        prices = selector_res.xpath('//div[@class="cell cell-2"]/text()').extract()
+        for name,price in zip(names,prices):
+            mobile_model_dict['list'].append((name,price))
+        mobile_model_dict['proId'] = mobile_info_dict['proId']
+        yield mobile_model_dict
 
         #create new requests to search param
         links = LinkExtractor(allow = ('param.shtml',),canonicalize=True,unique=True).extract_links(response)
@@ -96,7 +107,6 @@ class DatabloggerSpider(CrawlSpider):
             yield scrapy.Request(link.url, callback = self.parse2)
    
     def parse2(self, response):
-        print ("\n\n\n\n parse 2\n\n")
         # The list of items that are found on the particular page
         mobile_info_dict={}
         mobile_info_dict['_id'] = response.url

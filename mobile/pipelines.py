@@ -31,8 +31,16 @@ class MobilePipeline(object):
 			res = self.dbpool.runInteraction(self.insert_into_info,item)
 		elif item['type'] == 'realprice':
 			res = self.dbpool.runInteraction(self.insert_into_price2,item)
+		elif item['type'] == 'model':
+			res = self.dbpool.runInteraction(self.insert_into_model_lists,item)
 		else:
 			pass
+	
+	def insert_into_model_lists(self,conn,item):
+		print 'models \n\n\n'
+		for it in item['list']:
+			print 
+		pass
 
 	def insert_into_price(self,conn,item):
 	    try:
@@ -78,7 +86,6 @@ class MobilePipeline(object):
 						item['spec'],
 			])
 
-			print len(data)
         		conn.executemany(
 				'insert into info(_id,zolSubName,type,source_url,mobile_code,zolproductid,zolproduct,zolManuCnName,breadcrumb,page_title,spec) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [data, ]
 				)
@@ -93,10 +100,6 @@ class MobilePipeline(object):
 						item['price'],
 			])
 
-			print '\n\n  ***real price*** \n\n'
-			print data
-
-			print len(data)
         		conn.executemany(
 				'insert into price_real(proId,price) values(%s,%s)', [data, ]
 				)
